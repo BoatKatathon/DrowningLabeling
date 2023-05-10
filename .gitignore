@@ -1,0 +1,11 @@
+/DrowningDetectionDatasetCropped/swimming/*
+/DrowningDetectionDatasetCropped/drowning/*
+/DrowningDetectionDatasetCropped/not_swimming/*
+/DrowningDetectionDatasetYolo/data/train/*
+/DrowningDetectionDatasetYolo/data/test/*
+
+!/DrowningDetectionDatasetCropped/swimming/.gitkeep
+!/DrowningDetectionDatasetCropped/drowning/.gitkeep
+!/DrowningDetectionDatasetCropped/not_swimming/.gitkeep
+!/DrowningDetectionDatasetYolo/data/train/.gitkeep
+!/DrowningDetectionDatasetYolo/data/test/.gitkeep
