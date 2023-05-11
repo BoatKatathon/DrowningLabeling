@@ -292,7 +292,7 @@ while(True):
         key = cv.waitKeyEx(200)
     # print(key)
     # key control
-    if(key==ord('q')): # 'q' -> exit
+    if(key==ord('q') or key==ord('Q')): # 'q' -> exit
         break;
     elif(key==2424832 or key==2490368 or key==ord('a')): # ←/↑ or a goto previous image 
         print("--")
