@@ -96,6 +96,8 @@ print("============= How to use =============")
 print("Drag Mouse to crop image")
 print("Enter/Spacebar to save cropped box")
 print("Del to remove all cropped boxes in the image")
+print("p to remove 1st cropped box in the image")
+print("n to remove last cropped box in the image")
 print("w or / to select label")
 print("Esc to cancel (a) cropped box")
 print("←/↑ or a goto previous image")
@@ -330,12 +332,16 @@ while(True):
             print(f"Saved CroppedImage of {imgName}")
     elif(key==3014656):
         (hImg,wImg) = show_original_image.shape[:2]
-        cv.putText(show_original_image,"Confirm deletion in commandline!", (50,600),cv.FONT_HERSHEY_COMPLEX_SMALL,wImg/500, (0,242,255),wImg//500)
-        cv.imshow("OriginalShow",show_original_image)
-        cv.waitKey(1000)
-        confirm_del = input('Do you want to delete all crop in '+imgName+' ?(Y/n)')
+        #cv.putText(show_original_image,"Confirm deletion in commandline!", (50,600),cv.FONT_HERSHEY_COMPLEX_SMALL,wImg/500, (0,242,255),wImg//500)
+        #cv.imshow("OriginalShow",show_original_image)
+        #cv.waitKey(500)
+        #confirm_del = input('Do you want to delete all crop in '+imgName+' ?(Y/n)')
+        confirm_del='y'
         if(confirm_del=='y' or confirm_del=='Y'):
-            os.remove(img_path+imgName+".anno")
+            try:
+                os.remove(img_path+imgName+".anno")
+            except:
+                print("Cannot find :"+img_path+imgName+".anno")
             cropRectOK = False
             img_index_changed=True
             mouseFinished = False
@@ -343,6 +349,44 @@ while(True):
             mouseFirstPoint = [0,0]
             mouseLastPoint = [9,9]
             print(f"Deleted All Cropped Object")
+        img_index_changed=True
+    elif(key==ord('p')):
+        (hImg,wImg) = show_original_image.shape[:2]
+        confirm_del='y'
+        if(confirm_del=='y' or confirm_del=='Y'):
+            try:
+                with open(img_path+imgName+".anno", 'r') as fin:
+                    data = fin.read().splitlines(True)
+                with open(img_path+imgName+".anno", 'w') as fout:
+                    fout.writelines(data[1:])
+            except:
+                print("Cannot find :"+img_path+imgName+".anno")
+            cropRectOK = False
+            img_index_changed=True
+            mouseFinished = False
+            mouseDragging = False
+            mouseFirstPoint = [0,0]
+            mouseLastPoint = [9,9]
+            print(f"Deleted 1st cropped box in the image")
+        img_index_changed=True
+    elif(key==ord('n')):
+        (hImg,wImg) = show_original_image.shape[:2]
+        confirm_del='y'
+        if(confirm_del=='y' or confirm_del=='Y'):
+            try:
+                with open(img_path+imgName+".anno", 'r') as fin:
+                    data = fin.read().splitlines(True)
+                with open(img_path+imgName+".anno", 'w') as fout:
+                    fout.writelines(data[:len(data)-1])
+            except:
+                print("Cannot find :"+img_path+imgName+".anno")
+            cropRectOK = False
+            img_index_changed=True
+            mouseFinished = False
+            mouseDragging = False
+            mouseFirstPoint = [0,0]
+            mouseLastPoint = [9,9]
+            print(f"Deleted last cropped box in the image")
         img_index_changed=True
     elif(key==27): # Enter -> cancel cropped
         cropRectOK = False
