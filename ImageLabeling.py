@@ -9,6 +9,8 @@ import tkinter as tk
 import copy
 import re
 import pathlib
+import subprocess
+
 
 '''==============  Automatically Folders Listing  ================'''
 AutomaticallyFoldersListing = True # True = Auto   / False = Manually
@@ -25,10 +27,9 @@ folder_name_list = [
     ''#'training_images'
 ]
 
-
+img_index = 0
 folder_name = folder_name_list[0]
 dataset_path = './DrowningDetectionDataset/'
-
 
 
 if(AutomaticallyFoldersListing):
@@ -163,7 +164,6 @@ def mouse_handler(event, x, y, flags, param):
                 mouseLastPoint  = [x,y]
 
 
-img_index = 0
 img_index_changed = True
 original_image = []
 show_original_image = []
@@ -174,6 +174,19 @@ imgName = ''
 imgExtension = ''
 savedMessage = ''
 
+# Read Number (img_index) from file
+if os.path.exists(img_path+'.count'):
+    file_count = open(img_path+'.count', 'r')
+    line = file_count.readline()
+    if not line:
+        img_index=0
+    else:
+        if (line.isnumeric()):
+            img_index=int(line)
+            #print(f"Read img_index success : {img_index} !!")
+        else:
+            img_index=0
+    file_count.close()
 
 currentLabel = label_name_list[0]
 SimpleSelectLabel(label_name_list)
@@ -295,6 +308,12 @@ while(True):
     # print(key)
     # key control
     if(key==ord('q') or key==ord('Q')): # 'q' -> exit
+        if os.path.exists(img_path+'.count'):
+            subprocess.check_call(["attrib","-H",img_path+'/.count'])
+        with open(img_path+'/.count', 'w') as f:
+            f.write(str(img_index))
+            #print(f"Written img_index : {img_index}")
+            subprocess.check_call(["attrib","+H",img_path+'/.count'])
         break;
     elif(key==2424832 or key==2490368 or key==ord('a')): # ←/↑ or a goto previous image 
         print("--")
