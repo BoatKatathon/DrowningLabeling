@@ -35,20 +35,22 @@ dataset_path = './DrowningDetectionDataset/'
 '''------------------ Open VDO File ------------------'''
 filetypes = (
         ('All Media Files', '*.wav;*.aac;*.wma;*.wmv;*.avi;*.mpg;*.mpeg;*.m1v;*.mp2;*.mp3;*.mpa;*.mpe;*.m3u;*.mp4;*.mov;*.3g2;*.3gp2;*.3gp;*.3gpp;*.m4a;*.cda;*.aif;*.aifc;*.aiff;*.mid;*.midi;*.rmi;*.mkv;*.WAV;*.AAC;*.WMA;*.WMV;*.AVI;*.MPG;*.MPEG;*.M1V;*.MP2;*.MP3;*.MPA;*.MPE;*.M3U;*.MP4;*.MOV;*.3G2;*.3GP2;*.3GP;*.3GPP;*.M4A;*.CDA;*.AIF;*.AIFC;*.AIFF;*.MID;*.MIDI;*.RMI;*.MKV'),
-        ('All files', '*.*')
+        #('All files', '*.*')
     )
+root = tk.Tk()
 vdo_filename = fd.askopenfilename(title='Open a vdo',
         initialdir=dataset_path,
         filetypes=filetypes)
+root.destroy()
 
 cap = cv.VideoCapture(vdo_filename)
 if (cap.isOpened()== False): 
     print("Error -> opening video file!!!")
     print("[[ Please recheck the video file and video codec ]]")
+    tk.messagebox.showerror(title="Error in opening vdo", message="Error -> opening video file "+vdo_filename+" !!!\n[[ Please recheck the video file and video codec ]]")
     sys.exit()
 
 VDO_NFRAME = int(cap.get(cv.CAP_PROP_FRAME_COUNT))
-VDO_CURRENT_FRAME = 0
 
 if(AutomaticallyFoldersListing):
     folder_name_list = []
@@ -93,9 +95,11 @@ folder_name = os.path.dirname(os.path.abspath(vdo_filename))
 vdo_onlyname = os.path.basename(vdo_filename)
 vdo_onlyname_excluded_type = os.path.splitext(vdo_onlyname)[0]
 
+#tk.messagebox.showinfo(title="Show Path", message=f"{folder_name} * {vdo_onlyname} * {vdo_onlyname_excluded_type}")
+
 #folder_name = folder_name_list[select_folder_id]
 print(f'Fetch image in -> {folder_name}')
-img_path = dataset_path + folder_name + '/'
+img_path = folder_name + '/'
 #img_crop_path = dataset_crop_path + folder_name + '/'
 
 '''
@@ -194,9 +198,10 @@ show_original_image = []
 temp_show_original_image = []
 cropped_image = []
 cropRect = []
-imgName = ''
+imgName = vdo_onlyname
 imgExtension = ''
 savedMessage = ''
+frame = np.zeros((10,10,3), np.uint8)
 
 # Read Number (img_index) from file
 if os.path.exists(vdo_filename+'.count'):
@@ -212,6 +217,13 @@ if os.path.exists(vdo_filename+'.count'):
             img_index=0
     file_count.close()
 
+if(img_index > 0 and img_index <= VDO_NFRAME-1):
+    cap.set(cv.CAP_PROP_POS_FRAMES, img_index)
+    
+else:
+    img_index = 0
+    cap.set(cv.CAP_PROP_POS_FRAMES, img_index)
+    
 
 currentLabel = label_name_list[0]
 SimpleSelectLabel(label_name_list)
@@ -223,8 +235,8 @@ xywh_str = []
 key = -1
 
 def loadLabelsFromFile():
-    global imgName
-    txt_path = img_path+imgName+'.anno'
+    global imgName,img_index
+    txt_path = img_path+imgName+'_'+str(img_index).zfill(6)+'.anno'
     xywhs = []
     labels = []
     if os.path.exists(txt_path): # เช็คว่า path existed ?
@@ -240,8 +252,8 @@ def loadLabelsFromFile():
     return xywhs,labels
 
 def saveLabelsToFile():
-    global imgName,cropRect
-    txt_path = img_path+imgName+'.anno'
+    global imgName,cropRect,img_index
+    txt_path = img_path+imgName+'_'+str(img_index).zfill(6)+'.anno'
     croppedPosString = ''
     if os.path.exists(txt_path): # เช็คว่า path existed ?
         croppedPosString = '\n'
@@ -258,22 +270,30 @@ cv.setMouseCallback("OriginalShow", mouse_handler)
 refreshLabel = False
 lockCropping = 'unlock'
 cropRectOK = False
+
+ret, frame = cap.read()
+if(not ret):
+    print("Error -> opening video file!!!")
+    print("[[ Please recheck the video file and video codec ]]")
+    tk.messagebox.showerror(title="Error in opening vdo", message="Error -> opening video file "+vdo_filename+" !!!\n[[ Please recheck the video file and video codec ]]")
+    sys.exit()
+
 while(True):
     if(img_index_changed): 
         #cropped_image = None
         img_index_changed=False
         mouseFinished = False
         mouseDragging = False
-        print(img_path+list_files[img_index])
-        original_image = cv.imread(img_path+list_files[img_index])
-        show_original_image = original_image.copy()
-        imgName,imgExtension = os.path.splitext(list_files[img_index]) 
+        print(img_path+imgName+'_'+str(img_index).zfill(6)+'.anno')
+        #original_image = cv.imread(img_path+list_files[img_index])
+        show_original_image = frame.copy()
+        #imgName,imgExtension = os.path.splitext(list_files[img_index]) 
         #cropped_image = cv.imread(img_crop_path+imgName+'.png')
         (hImg,wImg) = show_original_image.shape[:2]
         putNamePos = (20,200)
         textSize = wImg/500
         textThickness = wImg//500
-        cv.putText(show_original_image, imgName, putNamePos, cv.FONT_HERSHEY_SIMPLEX, textSize, (0,0,255),textThickness)
+        cv.putText(show_original_image, imgName+'_'+str(img_index).zfill(6), putNamePos, cv.FONT_HERSHEY_SIMPLEX, textSize, (0,0,255),textThickness)
         temp_show_original_image = show_original_image.copy()
         marked_cvRects,marked_Label = loadLabelsFromFile()
         marked_Label_count = 0
@@ -306,7 +326,7 @@ while(True):
                 cropRect.x=0
             if(cropRect.y<0):
                 cropRect.y=0
-            if ( (cropRect.area() >= 1500) and (cropRect.w+cropRect.x <= wImg-1) and (cropRect.h+cropRect.y <= hImg-1) ): ## large_enough & not bigger than the original_image
+            if ( (cropRect.area() >= 900) and (cropRect.w+cropRect.x <= wImg-1) and (cropRect.h+cropRect.y <= hImg-1) ): ## large_enough & not bigger than the original_image
                 cropRectOK = True
                 (hImg,wImg) = show_original_image.shape[:2]
                 cv.rectangle(show_original_image, cropRect.tl(), cropRect.br(), (255,0,255),wImg//200)
@@ -333,12 +353,12 @@ while(True):
     # print(key)
     # key control
     if(key==ord('q') or key==ord('Q')): # 'q' -> exit
-        if os.path.exists(img_path+'.count'):
-            subprocess.check_call(["attrib","-H",img_path+'/.count'])
-        with open(img_path+'/.count', 'w') as f:
+        if os.path.exists(vdo_filename+'.count'):
+            subprocess.check_call(["attrib","-H",vdo_filename+'.count'])
+        with open(vdo_filename+'.count', 'w') as f:
             f.write(str(img_index))
             #print(f"Written img_index : {img_index}")
-            subprocess.check_call(["attrib","+H",img_path+'/.count'])
+            subprocess.check_call(["attrib","+H",vdo_filename+'.count'])
         break;
     elif(key==2424832 or key==2490368 or key==ord('a')): # ←/↑ or a goto previous image 
         print("--")
@@ -349,8 +369,10 @@ while(True):
         mouseDragging = False
         mouseFirstPoint = [0,0]
         mouseLastPoint = [9,9]
+        cap.set(cv.CAP_PROP_POS_FRAMES, img_index)
         if(img_index<0):
             img_index=0
+        ret, frame = cap.read()
     elif(key==2555904 or key==2621440 or key==ord('d')): # →/↓ or d goto next image
         print("++")
         img_index+=1
@@ -360,12 +382,16 @@ while(True):
         mouseDragging = False
         mouseFirstPoint = [0,0]
         mouseLastPoint = [9,9]
-        if(img_index>=len(list_files)):
-            img_index=len(list_files)-1
+        if(img_index>=VDO_NFRAME):
+            img_index=VDO_NFRAME-1
+            cap.set(cv.CAP_PROP_POS_FRAMES, img_index)
+        ret, frame = cap.read()
     elif(key==13 or key==32): # Enter or Spacebar -> save cropped
         if cropRectOK :
             #cropped_image = original_image[cropRect.y:cropRect.y+cropRect.h ,cropRect.x:cropRect.x+cropRect.w]
             #cv.imwrite(img_crop_path+imgName+'.png',cropped_image)
+            if(not os.path.exists(img_path+imgName+'_'+str(img_index).zfill(6)+'.jpg')):
+                cv.imwrite(img_path+imgName+'_'+str(img_index).zfill(6)+'.jpg',frame,[int(cv.IMWRITE_JPEG_QUALITY), 100])
             saveLabelsToFile()
             img_index_changed = True
             cropRectOK = False
@@ -383,9 +409,10 @@ while(True):
         confirm_del='y'
         if(confirm_del=='y' or confirm_del=='Y'):
             try:
-                os.remove(img_path+imgName+".anno")
+                os.remove(img_path+imgName+'_'+str(img_index).zfill(6)+".anno")
+                os.remove(img_path+imgName+'_'+str(img_index).zfill(6)+".jpg")
             except:
-                print("Cannot find :"+img_path+imgName+".anno")
+                print("Cannot find :"+img_path+imgName+'_'+str(img_index).zfill(6)+".anno")
             cropRectOK = False
             img_index_changed=True
             mouseFinished = False
@@ -399,12 +426,12 @@ while(True):
         confirm_del='y'
         if(confirm_del=='y' or confirm_del=='Y'):
             try:
-                with open(img_path+imgName+".anno", 'r') as fin:
+                with open(img_path+imgName+'_'+str(img_index).zfill(6)+".anno", 'r') as fin:
                     data = fin.read().splitlines(True)
-                with open(img_path+imgName+".anno", 'w') as fout:
+                with open(img_path+imgName+'_'+str(img_index).zfill(6)+".anno", 'w') as fout:
                     fout.writelines(data[1:])
             except:
-                print("Cannot find :"+img_path+imgName+".anno")
+                print("Cannot find :"+img_path+imgName+'_'+str(img_index).zfill(6)+".anno")
             cropRectOK = False
             img_index_changed=True
             mouseFinished = False
@@ -418,9 +445,9 @@ while(True):
         confirm_del='y'
         if(confirm_del=='y' or confirm_del=='Y'):
             try:
-                with open(img_path+imgName+".anno", 'r') as fin:
+                with open(img_path+imgName+'_'+str(img_index).zfill(6)+".anno", 'r') as fin:
                     data = fin.read().splitlines(True)
-                with open(img_path+imgName+".anno", 'w') as fout:
+                with open(img_path+imgName+'_'+str(img_index).zfill(6)+".anno", 'w') as fout:
                     fout.writelines(data[:len(data)-1])
             except:
                 print("Cannot find :"+img_path+imgName+".anno")
