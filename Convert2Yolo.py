@@ -8,13 +8,20 @@ import re
 import copy
 
 from numpy.lib.shape_base import split
-DIRs = ["./DrowningDetectionDataset/"] # TrainSet
-DIR_to_save = "./DrowningDetectionDatasetYolo/data/train/"
+# CAUTION !!!!!! Path must seperate only by slash -> "/" e.g. ./my_car_dataset/
+DIRs = ["D:/DrowningDetectionDatasetV2/"] # TrainSet
+DIR_to_save = "D:/DrowningDetectionDatasetYoloV1/data/train/"
 
 
 
 SAVE_IMAGE_EXTENSION = "png"
-TEST_MODE = False # True->write on disk False->only testing
+# ---------------------------------- vvvvv -------------------------------------------
+TEST_MODE = False # False->write on disk True->only testing
+# ---------------------------------- ^^^^^ -------------------------------------------
+# ---------------------------------- ^^^^^ -------------------------------------------
+# ---------------------------------- ^^^^^ -------------------------------------------
+# ---------------------------------- ^^^^^ -------------------------------------------
+# ---------------------------------- ^^^^^ -------------------------------------------
 class cvRect:
     def __init__(self, xywh):
         self.x = xywh[0]
@@ -77,7 +84,7 @@ def main():
     for DIR in DIRs: # access in each path (DIR)
         print(f"Enter to process in  -------->  {DIR}")
         for name_folder in os.listdir(DIR): # access each image/label in a path (DIR)
-            print(f'Working in {name_folder}')
+            print(f'Enter in DIR -> {name_folder}')
             if os.path.isdir(os.path.join(DIR, name_folder)):
                 for name in os.listdir(DIR+name_folder): ## in each folder
                     #print(f'Working in {name}')
@@ -160,7 +167,7 @@ def main():
                                                         print(f"{xywh_str[0]}-{xywh_str[1]}-{xywh_str[2]}-{xywh_str[3]}-{xywh_str[4]}")
                                                 else:
                                                     print(f'txt pos error in {full_filename}')
-                                                    print(f"{xywh_str[0]}-{xywh_str[1]}-{xywh_str[2]}-{xywh_str[3]}-{xywh_str[4]}")
+                                                    #print(f"{xywh_str[0]}-{xywh_str[1]}-{xywh_str[2]}-{xywh_str[3]}-{xywh_str[4]}")
                                             ### write yolo label .txt
                                             if(not TEST_MODE):
                                                 f = open(abs_path_to_save+'.txt', "w")
@@ -173,6 +180,9 @@ def main():
                                     print("Couldn't find image !!! (support: JPG/jpg/png)")
                                     print(f"Pls check at {full_filename}")
     print("Finished!!!!")
+    if (TEST_MODE):
+        print("You run on [Test Mode] || Output will not write to disk!!")
+        print("IF YOU WANT TO RUN REAL MODE - PLEASE SET VARIABLE TEST_MODE = False")
 
 
 
