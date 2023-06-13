@@ -10,7 +10,7 @@ import copy
 from numpy.lib.shape_base import split
 # CAUTION !!!!!! Path must seperate only by slash -> "/" e.g. ./my_car_dataset/
 DIRs = ["D:/DrowningDetectionDatasetV2/"] # TrainSet
-DIR_to_save = "D:/DrowningDetectionDatasetYolo_SWIM-DROWN-NOSWIM/data/train/"
+DIR_to_save = "D:/DrowningDetectionDatasetYolo_COAST-WATER/data/train/"
 
 
 
@@ -43,7 +43,11 @@ class cvRect:
     def get_xywh(self):
         return  [self.x,self.y,self.w,self.h]
 
-dictLabel = {
+dictLabelOUT = {
+    'coast':0,
+    'water':1,
+}
+dictLabelIN = {
     'swimming':0,
     'drowning':1,
     'not_swimming':2,
@@ -58,9 +62,12 @@ def makeLabelYOLO(xywh,nameClass,IMAGE_WIDTH,IMAGE_HEIGHT):
     WIDTH_NORM = WIDTH_OF_LABEL_ABS/IMAGE_WIDTH 
     HEIGHT_NORM = HEIGHT_OF_LABEL_ABS/IMAGE_HEIGHT
     '''
-    global cvRect,dictLabel
+    global cvRect,dictLabelOUT
     # find Label_ID
-    Label_ID = dictLabel[nameClass]
+    if(nameClass=="swimming" or nameClass=="drowning" ):
+        Label_ID = 1
+    else:
+        Label_ID = 0
     X_CENTER_NORM = xywh.center()[0]/IMAGE_WIDTH 
     Y_CENTER_NORM = xywh.center()[1]/IMAGE_HEIGHT 
     WIDTH_NORM = xywh.w/IMAGE_WIDTH 
@@ -70,13 +77,13 @@ def makeLabelYOLO(xywh,nameClass,IMAGE_WIDTH,IMAGE_HEIGHT):
 
 def main():
     numIMG = 0
-    global DIRs,DIR_to_save,SAVE_IMAGE_EXTENSION
+    global DIRs,DIR_to_save,SAVE_IMAGE_EXTENSION,dictLabelIN,dictLabelIN
     # Create classes.txt
     path_classes_txt = DIR_to_save+'classes.txt'
     if not os.path.exists(path_classes_txt):
         classesFile = open(path_classes_txt, "a+")
         print("classes.txt not exits -> writing... "+path_classes_txt)
-        for key in dictLabel:
+        for key in dictLabelOUT:
             n = classesFile.write(key+'\n')
             print(f"->{key}")
         classesFile.close()
@@ -149,7 +156,7 @@ def main():
                                                 countLine += 1
                                                 xywh_str = re.split(r'\t+', line)
                                                 if(len(xywh_str)==5):
-                                                    if(xywh_str[0] in dictLabel):
+                                                    if(xywh_str[0] in dictLabelIN):
                                                         try:
                                                             xPos=int(xywh_str[1])
                                                             yPos=int(xywh_str[2])
