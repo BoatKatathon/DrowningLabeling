@@ -110,6 +110,42 @@ mouseFinished = False
 mouseDragging = False
 lockCropping = 'lock'
 
+selectBoxToDelete = -1
+
+'''GUI Select Delete Specify Label'''
+class SimpleSelectBoxDeleteLabel():
+    def __init__(self):
+        global selectBoxToDelete
+        selectBoxToDelete = -1
+        self.window = tk.Tk()
+        self.window.geometry("1000x1000")
+        self.window.title("Select # number of box to delete!")
+        labelShow = tk.Label(self.window, text='Please enter # (number of box to delete)')
+        labelShow.config(font=('Helvatical bold',18))
+        labelShow.place(x=200, y=40, anchor=tk.NW)
+        self.textBox = tk.Text(self.window,height=15,width=60);
+        self.textBox.place(x=200, y=200, anchor=tk.NW)
+        label = tk.Label(self.window, text='OK')
+        label.config(font=('Helvatical bold',18))
+        label.bind("<Button-1>",lambda event,text='OK':self.hLabelClickOK(event,text))
+        label.place(x=200, y=500, anchor=tk.NW)
+        self.window.mainloop()
+    def hLabelClickOK(self,event,text):
+        global selectBoxToDelete
+        try:
+            inp = self.textBox.get(1.0, "end-1c")
+            string_int = int(inp)
+            selectBoxToDelete = string_int
+        except ValueError:
+            selectBoxToDelete = -1
+        finally:
+            if(selectBoxToDelete<=-1):
+                selectBoxToDelete=-1
+        self.window.quit()
+        self.window.destroy()
+    
+
+
 '''GUI Select Label'''
 changedLabel = None
 class SimpleSelectLabel():
@@ -117,6 +153,7 @@ class SimpleSelectLabel():
         numInRow = nCol
         self.window = tk.Tk()
         self.window.geometry("1800x950")
+        self.window.title("Select Label")
         i = 0 # row_index
         iLabel = 0 # index of Label
         nLabel = len(labelList)
@@ -258,7 +295,7 @@ while(True):
         for idx,marked_cvRect in enumerate(marked_cvRects):
             xc,yc,wc,hc = marked_cvRect.xywh()
             cv.rectangle(show_original_image, (xc,yc), (xc+wc,yc+hc), (0,0,255),4)
-            cv.putText(show_original_image,marked_Label[idx], (xc,yc),cv.FONT_HERSHEY_COMPLEX_SMALL,wImg/500, (0,0,255),wImg//500)
+            cv.putText(show_original_image,'#'+str(idx)+' '+marked_Label[idx], (xc,yc),cv.FONT_HERSHEY_COMPLEX_SMALL,wImg/500, (0,0,255),wImg//500)
         #if cropped_image is None:
         #    cv.imshow("CroppedShow",np.zeros((300,300,3),dtype=np.uint8))
     if lockCropping == 'unlock':
@@ -355,10 +392,35 @@ while(True):
         #cv.imshow("OriginalShow",show_original_image)
         #cv.waitKey(500)
         #confirm_del = input('Do you want to delete all crop in '+imgName+' ?(Y/n)')
+        # confirm_del='y'
+        # if(confirm_del=='y' or confirm_del=='Y'):
+        #     try:
+        #         os.remove(img_path+imgName+".anno")
+        #     except:
+        #         print("Cannot find :"+img_path+imgName+".anno")
+        #     cropRectOK = False
+        #     img_index_changed=True
+        #     mouseFinished = False
+        #     mouseDragging = False
+        #     mouseFirstPoint = [0,0]
+        #     mouseLastPoint = [9,9]
+        #     print(f"Deleted All Cropped Object")
+        # img_index_changed=True
+
+        # Also disable croppring
+        lockCropping = 'lock'
+        oldMouseLastPoint = mouseLastPoint
+        cv.setMouseCallback("OriginalShow",lambda *args : None)
+        SimpleSelectBoxDeleteLabel()
         confirm_del='y'
         if(confirm_del=='y' or confirm_del=='Y'):
             try:
-                os.remove(img_path+imgName+".anno")
+                with open(img_path+imgName+".anno", 'r') as fin:
+                    data = fin.read().splitlines(True)
+                    if(selectBoxToDelete>=0 and selectBoxToDelete<len(data)):
+                        data.pop(selectBoxToDelete)
+                with open(img_path+imgName+".anno", 'w') as fout:
+                    fout.writelines(data)
             except:
                 print("Cannot find :"+img_path+imgName+".anno")
             cropRectOK = False
@@ -367,7 +429,11 @@ while(True):
             mouseDragging = False
             mouseFirstPoint = [0,0]
             mouseLastPoint = [9,9]
-            print(f"Deleted All Cropped Object")
+            print(f"Deleted #{selectBoxToDelete} cropped box in the image")
+        cv.waitKey(250)
+        cv.setMouseCallback("OriginalShow", mouse_handler)
+        mouseLastPoint = oldMouseLastPoint
+        lockCropping = 'unlock'
         img_index_changed=True
     elif(key==ord('p')):
         (hImg,wImg) = show_original_image.shape[:2]
