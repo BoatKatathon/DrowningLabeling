@@ -318,7 +318,7 @@ while(True):
                 cropRect.x=0
             if(cropRect.y<0):
                 cropRect.y=0
-            if ( (cropRect.area() >= 1500) and (cropRect.w+cropRect.x <= wImg-1) and (cropRect.h+cropRect.y <= hImg-1) ): ## large_enough & not bigger than the original_image
+            if ( (cropRect.area() >= 500) and (cropRect.w+cropRect.x <= wImg-1) and (cropRect.h+cropRect.y <= hImg-1) ): ## large_enough & not bigger than the original_image
                 cropRectOK = True
                 (hImg,wImg) = show_original_image.shape[:2]
                 cv.rectangle(show_original_image, cropRect.tl(), cropRect.br(), (255,0,255),wImg//200)
