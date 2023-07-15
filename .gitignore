@@ -3,6 +3,7 @@
 /DrowningDetectionDatasetCropped/not_swimming/*
 /DrowningDetectionDatasetYolo/data/train/*
 /DrowningDetectionDatasetYolo/data/test/*
+/venv_main/*
 
 !/DrowningDetectionDatasetCropped/swimming/.gitkeep
 !/DrowningDetectionDatasetCropped/drowning/.gitkeep

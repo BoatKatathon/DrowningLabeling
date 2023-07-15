@@ -96,7 +96,8 @@ print(f"File List ext:{list_files}")
 print("============= How to use =============")
 print("Drag Mouse to crop image")
 print("Enter/Spacebar to save cropped box")
-print("Del to remove all cropped boxes in the image")
+print("Del to remove specific cropped boxes in the image")
+print("k to remove all boxes in the image")
 print("p to remove 1st cropped box in the image")
 print("n to remove last cropped box in the image")
 print("w or / to select label")
@@ -118,17 +119,17 @@ class SimpleSelectBoxDeleteLabel():
         global selectBoxToDelete
         selectBoxToDelete = -1
         self.window = tk.Tk()
-        self.window.geometry("1000x1000")
+        self.window.geometry("600x300")
         self.window.title("Select # number of box to delete!")
         labelShow = tk.Label(self.window, text='Please enter # (number of box to delete)')
         labelShow.config(font=('Helvatical bold',18))
-        labelShow.place(x=200, y=40, anchor=tk.NW)
-        self.textBox = tk.Text(self.window,height=15,width=60);
-        self.textBox.place(x=200, y=200, anchor=tk.NW)
+        labelShow.place(x=50, y=40, anchor=tk.NW)
+        self.textBox = tk.Text(self.window,height=2,width=18);
+        self.textBox.place(x=50, y=110, anchor=tk.NW)
         label = tk.Label(self.window, text='OK')
-        label.config(font=('Helvatical bold',18))
+        label.config(font=('Helvatical bold',20))
         label.bind("<Button-1>",lambda event,text='OK':self.hLabelClickOK(event,text))
-        label.place(x=200, y=500, anchor=tk.NW)
+        label.place(x=100, y=150, anchor=tk.NW)
         self.window.mainloop()
     def hLabelClickOK(self,event,text):
         global selectBoxToDelete
@@ -293,9 +294,10 @@ while(True):
         putLabel_count = (20,400)
         cv.putText(show_original_image,str(marked_Label_count), putLabel_count, cv.FONT_HERSHEY_SIMPLEX, textSize, (0,0,255),textThickness)
         for idx,marked_cvRect in enumerate(marked_cvRects):
+            labelColor = list(np.random.random(size=3) * 256)
             xc,yc,wc,hc = marked_cvRect.xywh()
-            cv.rectangle(show_original_image, (xc,yc), (xc+wc,yc+hc), (0,0,255),4)
-            cv.putText(show_original_image,'#'+str(idx)+' '+marked_Label[idx], (xc,yc),cv.FONT_HERSHEY_COMPLEX_SMALL,wImg/500, (0,0,255),wImg//500)
+            cv.rectangle(show_original_image, (xc,yc), (xc+wc,yc+hc), labelColor,4)
+            cv.putText(show_original_image,'#'+str(idx)+' '+marked_Label[idx], (xc,yc),cv.FONT_HERSHEY_COMPLEX_SMALL,wImg/500, labelColor,wImg//500)
         #if cropped_image is None:
         #    cv.imshow("CroppedShow",np.zeros((300,300,3),dtype=np.uint8))
     if lockCropping == 'unlock':
@@ -386,27 +388,28 @@ while(True):
             mouseFirstPoint = [0,0]
             mouseLastPoint = [9,9]
             print(f"Saved CroppedImage of {imgName}")
-    elif(key==3014656):
+    elif(key==ord('k') or key==ord('K')): # k or K -> delete all boxes
         (hImg,wImg) = show_original_image.shape[:2]
         #cv.putText(show_original_image,"Confirm deletion in commandline!", (50,600),cv.FONT_HERSHEY_COMPLEX_SMALL,wImg/500, (0,242,255),wImg//500)
         #cv.imshow("OriginalShow",show_original_image)
         #cv.waitKey(500)
         #confirm_del = input('Do you want to delete all crop in '+imgName+' ?(Y/n)')
-        # confirm_del='y'
-        # if(confirm_del=='y' or confirm_del=='Y'):
-        #     try:
-        #         os.remove(img_path+imgName+".anno")
-        #     except:
-        #         print("Cannot find :"+img_path+imgName+".anno")
-        #     cropRectOK = False
-        #     img_index_changed=True
-        #     mouseFinished = False
-        #     mouseDragging = False
-        #     mouseFirstPoint = [0,0]
-        #     mouseLastPoint = [9,9]
-        #     print(f"Deleted All Cropped Object")
-        # img_index_changed=True
-
+        confirm_del='y'
+        if(confirm_del=='y' or confirm_del=='Y'):
+            try:
+                os.remove(img_path+imgName+".anno")
+            except:
+                print("Cannot find :"+img_path+imgName+".anno")
+            cropRectOK = False
+            img_index_changed=True
+            mouseFinished = False
+            mouseDragging = False
+            mouseFirstPoint = [0,0]
+            mouseLastPoint = [9,9]
+            print(f"Deleted All Cropped Object")
+        img_index_changed=True
+    elif(key==3014656):
+        (hImg,wImg) = show_original_image.shape[:2]
         # Also disable croppring
         lockCropping = 'lock'
         oldMouseLastPoint = mouseLastPoint
@@ -417,19 +420,31 @@ while(True):
             try:
                 with open(img_path+imgName+".anno", 'r') as fin:
                     data = fin.read().splitlines(True)
+                    #clear empty line
+                    numData = len(data)
+                    idx=0
+                    while(True):
+                        if(data[idx] in ['\n','\r\n']):
+                            data.pop(idx)
+                            numData = numData - 1
+                        else:
+                            idx = idx + 1
+                        if(idx>=numData):
+                            break
                     if(selectBoxToDelete>=0 and selectBoxToDelete<len(data)):
                         data.pop(selectBoxToDelete)
-                with open(img_path+imgName+".anno", 'w') as fout:
-                    fout.writelines(data)
+                        print(f"Deleted #{selectBoxToDelete} cropped box in the image")
+                    with open(img_path+imgName+".anno", 'w') as fout:
+                        fout.writelines(data)
             except:
-                print("Cannot find :"+img_path+imgName+".anno")
+                print("Cannot find or delete on :"+img_path+imgName+".anno")
             cropRectOK = False
             img_index_changed=True
             mouseFinished = False
             mouseDragging = False
             mouseFirstPoint = [0,0]
             mouseLastPoint = [9,9]
-            print(f"Deleted #{selectBoxToDelete} cropped box in the image")
+            
         cv.waitKey(250)
         cv.setMouseCallback("OriginalShow", mouse_handler)
         mouseLastPoint = oldMouseLastPoint
